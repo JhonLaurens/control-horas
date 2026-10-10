@@ -290,6 +290,17 @@ dialog::backdrop{background:rgba(5,8,15,.55);backdrop-filter:blur(6px)}
   .sess{grid-template-columns:4px 1fr auto}.sess .acts{grid-column:2/-1;opacity:1;justify-content:flex-start}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.clock{display:grid;gap:4px;justify-items:end;padding:10px 16px 10px 18px;border-radius:var(--r-md);background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 10%,var(--card)),var(--card));border:1px solid var(--line);position:relative;overflow:hidden;min-width:240px}
+.clock::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(var(--acc),var(--acc2))}
+.clock-main{display:flex;align-items:baseline;gap:2px;font-family:var(--font-d);font-variant-numeric:tabular-nums;line-height:1}
+.clock-hm{font-size:30px;font-weight:650;letter-spacing:-.02em}
+.clock-sec{display:inline-block;font-size:18px;font-weight:600;color:var(--fg2);min-width:2ch;margin-left:3px}
+.clock-sec.tk{animation:clockTick .45s var(--ease) both}
+.clock-ap{font-size:12px;font-weight:600;color:var(--fg3);margin-left:6px}
+.clock-date,.clock-left{font-size:12px;color:var(--fg2);font-variant-numeric:tabular-nums}
+.clock-left b{color:var(--fg)}
+@keyframes clockTick{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (max-width:900px){.clock{justify-items:start;min-width:0;width:100%}}
 </style>
 </head>
 <body>
@@ -313,6 +324,7 @@ dialog::backdrop{background:rgba(5,8,15,.55);backdrop-filter:blur(6px)}
     <header class="top">
       <div><h1 id="greet">Hola</h1><div class="sub" id="today-date"></div><div class="daychips" id="dayChips"></div></div>
       <div class="sp"></div>
+      <div class="clock" id="liveClock" role="timer"><div class="clock-main"><span class="clock-hm" id="ckHM">--:--</span><span class="clock-sec" id="ckS">--</span><span class="clock-ap" id="ckAP"></span></div><div class="clock-date" id="ckDate"></div><div class="clock-left" id="ckLeft"></div></div>
       <button class="btn" id="btnManual" title="Agregar sesión manual (N)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Sesión manual</button>
       <button class="ibtn" id="btnTheme" title="Cambiar tema (T)" aria-label="Cambiar tema"></button>
       <button class="ibtn" id="btnKeys" title="Mostrar u ocultar atajos (?)" aria-label="Atajos de teclado"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
@@ -645,7 +657,13 @@ function renderTags(){const set=new Set();for(const s of all())if(s.tag)set.add(
 /* ---------- Tick en vivo ---------- */
 const C1=2*Math.PI*128,C2=2*Math.PI*106;
 function fmtBig(ms){ms=Math.max(0,ms);const h=Math.floor(ms/H),m=Math.floor(ms%H/M);return h?`${h}<small>h</small> ${p2(m)}<small>m</small>`:`${m}<small>m</small>`;}
-function tick(){memo.clear();const t=now(),d0=sod(t),d1=addDays(d0,1);const a=S.active;const paused=a&&openPause(a);
+function clockTick(){const t=now(),P=Object.fromEntries(new Intl.DateTimeFormat('es-CO',{timeZone:'America/Bogota',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).formatToParts(t).map(x=>[x.type,x.value]));
+ $('#ckHM').textContent=P.hour+':'+P.minute;const sEl=$('#ckS');if(sEl.textContent!==P.second){sEl.textContent=P.second;sEl.classList.remove('tk');void sEl.offsetWidth;sEl.classList.add('tk');}
+ $('#ckAP').textContent=String(P.dayPeriod||'').trim().toLowerCase().startsWith('p')?'p. m.':'a. m.';
+ $('#ckDate').textContent=cap(new Intl.DateTimeFormat('es-CO',{timeZone:'America/Bogota',weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(t))+' · Bogotá';
+ const d0=sod(t),info=dayInfo(d0),ws=atMin(d0,tmin(S.settings.schedStart)),we=atMin(d0,tmin(S.settings.schedEnd));
+ if(info.working&&t>=ws&&t<we){const [h,m,s]=hms(we-t);$('#ckLeft').innerHTML=`Salida ${S.settings.schedEnd} en <b>${h}:${m}:${s}</b>`;}else $('#ckLeft').textContent='Fuera de horario';}
+function tick(){clockTick();memo.clear();const t=now(),d0=sod(t),d1=addDays(d0,1);const a=S.active;const paused=a&&openPause(a);
  const B=dayBreak(d0),info=B.info,goal=info.goal,ref=goal||dailyGoalMs()||H,st=S.settings;
  const cur=a?workIn(a):0;const [h,m,s]=hms(a?cur:B.work);
  $('#timer').innerHTML=`${h}:${m}<span class="sec">:${s}</span>`;

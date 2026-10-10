@@ -55,3 +55,22 @@ describe('festivos y metas', () => {
     expect(e.classNow(NOW)?.k).toBe('eN');
   });
 });
+
+describe('reloj en vivo', () => {
+  it('formatea la hora de Bogotá en 12 h es-CO', async () => {
+    const { bogotaParts } = await import('../time');
+    expect(bogotaParts(Date.UTC(2026, 9, 10, 13, 39, 7))).toEqual({ h: '08', m: '39', s: '07', ap: 'a. m.' });
+    expect(bogotaParts(Date.UTC(2026, 9, 10, 22, 5, 59))).toEqual({ h: '05', m: '05', s: '59', ap: 'p. m.' });
+  });
+  it('categoría vigente sin jornada activa', () => {
+    const e = new Engine(DEFAULT_SETTINGS, [], null, NOW);
+    expect(e.classAt(t('2026-10-09T10:00')).k).toBe('oD');   // viernes laboral, en horario
+    expect(e.classAt(t('2026-10-09T18:00')).k).toBe('eD');   // después de la salida
+    expect(e.classAt(t('2026-10-09T20:00')).k).toBe('eN');   // nocturna desde 19:00
+    expect(e.classAt(t('2026-10-09T06:30')).k).toBe('eD');   // antes de la entrada, diurna
+    expect(e.classAt(t('2026-10-10T09:00')).k).toBe('sD');   // sábado
+    expect(e.classAt(t('2026-10-11T21:00')).k).toBe('fN');   // domingo nocturna
+    expect(e.classAt(t('2026-10-12T10:00')).k).toBe('fD');   // festivo Día de la Raza
+    expect(e.classAt(t('2026-10-09T10:00'), true).k).toBe('eD'); // marcada como extra
+  });
+});

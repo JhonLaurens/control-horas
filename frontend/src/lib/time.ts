@@ -29,3 +29,14 @@ export const fmtWD = new Intl.DateTimeFormat('es-CO', { weekday: 'short' });
 export const fmtMY = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' });
 export const fmtDate = new Intl.DateTimeFormat('es-CO', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
 export const fmtWDM = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+
+const ZONE = 'America/Bogota';
+const fmtTime = new Intl.DateTimeFormat('es-CO', { timeZone: ZONE, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+
+/** Partes de la hora en Bogotá: "08", "39", "12", "a. m." */
+export function bogotaParts(t: number) {
+  const p = Object.fromEntries(fmtTime.formatToParts(t).map(x => [x.type, x.value]));
+  const ap = (p.dayPeriod || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  return { h: p.hour, m: p.minute, s: p.second, ap: ap.startsWith('p') ? 'p. m.' : 'a. m.' };
+}
+

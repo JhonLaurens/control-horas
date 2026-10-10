@@ -84,7 +84,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   // Reloj en vivo + resincronización periódica (otras pestañas / reinicios)
-  useEffect(() => { const i = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(i); }, []);
+  // Tic alineado al cambio de segundo para que el reloj en vivo sea exacto
+  useEffect(() => {
+    let id: number;
+    const loop = () => { setNow(Date.now()); id = window.setTimeout(loop, 1000 - (Date.now() % 1000) + 5); };
+    id = window.setTimeout(loop, 1000 - (Date.now() % 1000) + 5);
+    return () => window.clearTimeout(id);
+  }, []);
   useEffect(() => {
     const i = setInterval(() => { if (!document.hidden && !busy.current) refresh(); }, 30000);
     const v = () => { if (!document.hidden) { setNow(Date.now()); refresh(); } };

@@ -98,17 +98,24 @@ export class Engine {
     for (let d = sod(s.start); d < this.sEnd(s); d = addDays(d, 1)) { const p = this.dayBreak(d).per[s.id]; if (p) for (const k of KEYS) T[k] += p[k]; }
     return fin(T);
   }
-  /** Categoría del tiempo que corre ahora mismo en la jornada activa. */
-  classNow(t: number) {
-    const a = this.active; if (!a) return null;
+  /**
+   * Categoría que tendría el trabajo en el instante t (con las reglas vigentes).
+   * Si hay jornada activa se usa su marca "extra" y lo ya acumulado hoy.
+   */
+  classAt(t: number, extra = false) {
     const d0 = sod(t), info = this.dayInfo(d0); const n = this.isNight(t) ? 'N' : 'D'; let k: string;
     if (!info.working) k = (info.kind === 'fest' || info.kind === 'dom' ? 'f' : 's') + n;
-    else if (a.extra) k = 'e' + n;
+    else if (extra) k = 'e' + n;
     else {
       const inW = t >= atMin(d0, tmin(this.settings.schedStart)) && t < atMin(d0, tmin(this.settings.schedEnd));
       k = (inW && this.dayBreak(d0).ord < this.dailyGoalMs() ? 'o' : 'e') + n;
     }
     return { x: k[0] !== 'o', k: k as CatKey, l: CAT_LABEL[k as CatKey] };
+  }
+  /** Categoría del tiempo que corre ahora mismo en la jornada activa. */
+  classNow(t: number) {
+    const a = this.active; if (!a) return null;
+    return this.classAt(t, a.extra);
   }
 }
 

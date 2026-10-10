@@ -289,3 +289,32 @@ dialog::backdrop{background:rgba(5,8,15,.55);backdrop-filter:blur(6px)}
 .offline{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;padding:10px 16px;background:color-mix(in srgb,var(--bad) 18%,var(--bg2));border-bottom:1px solid color-mix(in srgb,var(--bad) 40%,transparent);color:var(--fg);font-size:13px}
 .offline code{font-family:ui-monospace,Consolas,monospace;font-size:12px}
 .btn[disabled]{opacity:.6;pointer-events:none}
+
+/* ---------- Reloj en tiempo real (encabezado) ---------- */
+.clock{display:grid;gap:4px;justify-items:end;padding:10px 16px 10px 18px;border-radius:var(--r-md);background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 10%,var(--card)),var(--card));border:1px solid var(--line);box-shadow:0 10px 30px -18px color-mix(in srgb,var(--acc) 60%,transparent);position:relative;overflow:hidden;min-width:260px}
+.clock::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(var(--acc),var(--acc2))}
+.clock-main{display:flex;align-items:baseline;gap:2px;font-family:var(--font-d);font-variant-numeric:tabular-nums;line-height:1}
+.clock-hm{font-size:30px;font-weight:650;letter-spacing:-.02em}
+.clock-colon{display:inline-block;margin:0 1px;animation:clockBlink 1s steps(1) infinite;color:var(--acc)}
+.clock-sec{display:inline-block;font-size:18px;font-weight:600;color:var(--fg2);min-width:2ch;margin-left:3px;animation:clockTick .45s var(--ease) both}
+.clock-ap{font-size:12px;font-weight:600;color:var(--fg3);margin-left:6px;letter-spacing:.04em}
+.clock-date{font-size:12px;color:var(--fg2)}
+.clock-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.clock-cat{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:99px;border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc)}
+.clock-cat i{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+.clock-cat.x{border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn)}
+.clock-cat.n{box-shadow:inset 0 0 0 1px color-mix(in srgb,#8b5cf6 30%,transparent)}
+.clock-left{font-size:11.5px;color:var(--fg2);font-variant-numeric:tabular-nums}
+.clock-left b{color:var(--fg);font-weight:650}
+.clock-left.off{color:var(--fg3)}
+@keyframes clockTick{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes clockBlink{50%{opacity:.35}}
+@media (max-width:900px){.clock{justify-items:start;min-width:0;width:100%}.clock-meta{justify-content:flex-start}}
+@media (prefers-reduced-motion:reduce){.clock-sec,.clock-colon,.clock-cat i{animation:none}}
+.top.hdr{flex-wrap:nowrap;align-items:flex-start}
+.top.hdr .hdr-title{flex:1 1 auto;min-width:0}
+.top.hdr .hdr-title .daychips{flex-wrap:wrap}
+.top.hdr>.sp{display:none}
+.top.hdr>.btn,.top.hdr>.ibtn{margin-top:8px;flex:none}
+.top.hdr>.clock{flex:none}
+@media (max-width:1100px){.top.hdr{flex-wrap:wrap}.top.hdr .hdr-title{flex-basis:100%}}

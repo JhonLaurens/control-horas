@@ -6,6 +6,7 @@ import { nextHoliday } from './lib/holidays';
 import { Icon } from './components/icons';
 import { useToast } from './components/Toasts';
 import { SessionDialog } from './components/SessionDialog';
+import { LiveClock } from './components/LiveClock';
 import { TodayView } from './views/Today';
 import { MonthView, WeekView } from './views/Period';
 import { HistoryView } from './views/History';
@@ -100,9 +101,10 @@ export function App() {
           <SideStatus />
         </nav>
         <main>
-          <header className="top">
-            <div><h1 id="greet">{title}</h1><div className="sub" id="today-date">{cap(fmtLong.format(t))}</div><DayChips /></div>
+          <header className="top hdr">
+            <div className="hdr-title"><h1 id="greet">{title}</h1><div className="sub" id="today-date">{cap(fmtLong.format(t))}</div><DayChips /></div>
             <div className="sp" />
+            <LiveClock />
             <button className="btn" id="btnManual" title="Agregar sesión manual (N)" onClick={() => openEdit()}>{Icon.plus}Sesión manual</button>
             <button className="ibtn" id="btnTheme" title="Cambiar tema (T)" aria-label="Cambiar tema" onClick={actions.toggleTheme}>{st.theme === 'dark' ? Icon.sun : Icon.moon}</button>
             <button className="ibtn" id="btnKeys" title="Mostrar u ocultar atajos (?)" aria-label="Atajos de teclado" onClick={actions.toggleHint}>{Icon.keys}</button>
