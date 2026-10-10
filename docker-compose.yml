@@ -1,0 +1,58 @@
+# Control de Horas: frontend (nginx + React), backend (Spring Boot) y PostgreSQL 16.
+# Uso: copia .env.example a .env, define POSTGRES_PASSWORD y ejecuta `docker compose up -d --build`.
+name: control-horas
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-controlhoras}
+      POSTGRES_USER: ${POSTGRES_USER:-controlhoras}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en el archivo .env}
+      TZ: ${APP_ZONE:-America/Bogota}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        SKIP_TESTS: ${SKIP_TESTS:-false}
+    image: control-horas-backend:latest
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-controlhoras}
+      DB_USER: ${POSTGRES_USER:-controlhoras}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en el archivo .env}
+      APP_ZONE: ${APP_ZONE:-America/Bogota}
+      TZ: ${APP_ZONE:-America/Bogota}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # Solo accesible desde este equipo (útil para probar la API directamente)
+      - "127.0.0.1:${BACKEND_PORT:-8093}:8080"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        SKIP_TESTS: ${SKIP_TESTS:-false}
+    image: control-horas-frontend:latest
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-8092}:8080"
+
+volumes:
+  pgdata:

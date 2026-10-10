@@ -1,0 +1,7 @@
+{
+  "name": "control-horas-e2e",
+  "private": true,
+  "description": "Prueba de humo de extremo a extremo (UI + API + PostgreSQL). Requiere la app en http://localhost:8090.",
+  "scripts": { "test": "node e2e.cjs" },
+  "devDependencies": { "playwright-core": "^1.48.0" }
+}

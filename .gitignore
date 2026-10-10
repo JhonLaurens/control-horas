@@ -1,0 +1,33 @@
+# Secretos / entorno
+.env
+.env.*
+!.env.example
+
+# Node / Vite
+node_modules/
+dist/
+*.tsbuildinfo
+.vite/
+npm-debug.log*
+
+# Java / Maven
+target/
+*.class
+*.log
+hs_err_pid*
+
+# IDEs y sistema
+.idea/
+*.iml
+.vscode/
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Salidas de pruebas
+test-results/
+playwright-report/
+coverage/
+*.csv
+!shared/*.csv
