@@ -5,7 +5,7 @@ import { Icon } from '../components/icons';
 import { Big } from '../components/common';
 import { SessionRow } from '../components/SessionRow';
 
-const C1 = 2 * Math.PI * 128, C2 = 2 * Math.PI * 106;
+const C1 = 2 * Math.PI * 128, C2 = 2 * Math.PI * 108;
 
 export function Notice() {
   const { eng, now: t, state } = useStore();
@@ -72,20 +72,17 @@ export function TodayView() {
           <div className="ringwrap">
             <svg viewBox="0 0 300 300" aria-hidden="true">
               <defs>
-                <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="var(--acc)" /><stop offset="1" stopColor="var(--acc2)" /></linearGradient>
-                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                <linearGradient id="rg" gradientUnits="userSpaceOnUse" x1="22" y1="22" x2="278" y2="278"><stop offset="0" stopColor={cn?.x ? 'var(--warn)' : 'var(--acc)'} /><stop offset="1" stopColor={cn?.x ? '#f97316' : 'var(--acc2)'} /></linearGradient>
               </defs>
-              <circle className="ring-track" cx="150" cy="150" r="128" fill="none" strokeWidth="16" />
-              <circle className="ring-prog" cx="150" cy="150" r="128" fill="none" stroke={pr >= 1 ? 'var(--ok)' : 'url(#rg)'} strokeWidth="16" strokeLinecap="round" filter="url(#glow)" style={{ strokeDasharray: C1, strokeDashoffset: C1 * (1 - pr) }} />
-              <circle className="ring-track" cx="150" cy="150" r="106" fill="none" strokeWidth="5" opacity=".6" />
-              <circle className="ring-extra" cx="150" cy="150" r="106" fill="none" stroke="var(--warn)" strokeWidth="5" strokeLinecap="round" style={{ strokeDasharray: C2, strokeDashoffset: C2 * (1 - ex) }} />
+              <g transform="rotate(-90 150 150)">
+                <circle className="ring-track" cx="150" cy="150" r="128" fill="none" strokeWidth="14" />
+                <circle className="ring-prog" cx="150" cy="150" r="128" fill="none" stroke={pr >= 1 ? 'var(--ok)' : 'url(#rg)'} strokeWidth="14" strokeLinecap="round" strokeDasharray={C1} strokeDashoffset={C1 * (1 - Math.min(1, Math.max(0, pr)))} opacity={pr > 0 ? 1 : 0} />
+                <circle className="ring-track" cx="150" cy="150" r="108" fill="none" strokeWidth="4" opacity=".55" />
+                <circle className="ring-extra" cx="150" cy="150" r="108" fill="none" stroke="var(--warn)" strokeWidth="4" strokeLinecap="round" strokeDasharray={C2} strokeDashoffset={C2 * (1 - Math.min(1, Math.max(0, ex)))} opacity={ex > 0 ? 1 : 0} />
+              </g>
             </svg>
             <div className="ring-center">
-              <div className="pills">
-                <span className={'pill ' + (a ? (paused ? 'pau' : 'run') : '')} id="statusPill"><i /><span>{a ? (paused ? 'En pausa' : 'En curso') : 'Detenido'}</span></span>
-                {cn && <span className={'pill ' + (cn.x ? 'ext' : 'ord')} id="classPill"><i /><span>{cn.l}</span></span>}
-              </div>
-              <div className="timer" id="timer">{h}:{m}<span className="sec">:{s}</span></div>
+              <div className="timer" id="timer"><span className="hm">{h}:{m}</span><span className="sec">:{s}</span></div>
               <div className="ring-sub" id="ringSub">
                 {!info.working ? <>{info.fest ? 'Festivo' : 'Día no laboral'} · <b>{dur(B.extra, 1)}</b> extra</>
                   : a ? <>Ordinarias <b>{dur(B.ord, 1)}</b> · {pct}% de {hNum(goal / H)} h</>
@@ -94,6 +91,10 @@ export function TodayView() {
               <div className={'pausetimer' + (paused ? ' on' : '')}>{paused ? `Pausa actual ${hms(t - paused.start).join(':')}` : a ? `Sesión iniciada a las ${hm(a.start)}` : ''}</div>
             </div>
           </div>
+          <div className="pills hero-pills">
+              <span className={'pill ' + (a ? (paused ? 'pau' : 'run') : '')} id="statusPill"><i /><span>{a ? (paused ? 'En pausa' : 'En curso') : 'Detenido'}</span></span>
+              {cn && <span className={'pill ' + (cn.x ? 'ext' : 'ord')} id="classPill"><i /><span>{cn.l}</span></span>}
+            </div>
           <div className="controls" id="controls">
             {!a ? <button className="btn pri xl" id="bStart" title="Iniciar (Espacio)" onClick={actions.start}>{Icon.play}Iniciar</button> : <>
               <button className={'btn xl ' + (paused ? 'pri' : 'warn')} id="bPause" title={(paused ? 'Reanudar' : 'Pausar') + ' (P)'} onClick={actions.togglePause}>{paused ? <>{Icon.play}Reanudar</> : <>{Icon.pause}Pausar</>}</button>
