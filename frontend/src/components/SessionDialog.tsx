@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AutoTextarea } from './AutoTextarea';
 import { useStore } from '../lib/store';
 import { H, M, atMin, dur, hm, parseLocal, sod, tmin, ymd } from '../lib/time';
 
@@ -35,8 +36,8 @@ export function SessionDialog() {
     cls = f.extra ? 'Toda la sesión como extra' : !info.working ? (info.fest ? 'Festivo (' + info.fest + '): todo es extra' : 'Día no laboral: todo es extra')
       : (a >= ws && b <= we && ymd(a) === ymd(b)) ? 'Dentro del horario (ordinaria hasta completar la jornada)' : 'Incluye tiempo fuera del horario (extra)';
   }
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = k === 'extra' ? e.target.checked : e.target.value; setErr('');
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const val = k === 'extra' ? (e.target as HTMLInputElement).checked : e.target.value; setErr('');
     setF(o => { const n = { ...o, [k]: val }; if (k === 'sd' && n.ed < n.sd) n.ed = n.sd; return n; });
   };
 
@@ -65,7 +66,8 @@ export function SessionDialog() {
           <label className="f">Hora de fin<input type="time" id="fET" value={f.et} onChange={set('et')} required /></label>
           <label className="f">Pausas (minutos)<input type="number" id="fP" min="0" step="1" value={f.p} onChange={set('p')} /></label>
           <label className="f">Proyecto<input id="fTag" list="tagList" maxLength={40} value={f.tag} onChange={set('tag')} /></label>
-          <label className="f full">Nota<input id="fNote" maxLength={200} placeholder="Opcional" value={f.note} onChange={set('note')} /></label>
+          <label className="f full">Nota<AutoTextarea id="fNote" className="note-ta" maxLength={5000} placeholder="Opcional · admite varias líneas (Ctrl+Enter para guardar)" value={f.note} onChange={set('note')}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit(); } }} /></label>
           <label className="check full"><input type="checkbox" id="fExtra" checked={f.extra} onChange={set('extra')} />Marcar toda la sesión como horas extra</label>
           <div className="dlg-calc"><span>Tiempo trabajado</span><b id="fCalc">{v ? '—' : dur(b - a - p) + (ymd(a) !== ymd(b) ? ' · cruza medianoche' : '')}</b></div>
           <div className="dlg-calc" style={{ marginTop: -6 }}><span>Clasificación</span><b id="fClass">{cls}</b></div>

@@ -1,4 +1,5 @@
 import { useStore } from '../lib/store';
+import { AutoTextarea } from '../components/AutoTextarea';
 import { extraHint, openPause } from '../lib/engine';
 import { H, M, addDays, atMin, dur, hNum, hm, hms, p2, sod, sow, tmin } from '../lib/time';
 import { Icon } from '../components/icons';
@@ -103,9 +104,9 @@ export function TodayView() {
           </div>
           <Notice />
           <div className="meta">
-            <input id="inNote" placeholder="¿En qué estás trabajando?" maxLength={200} aria-label="Nota de la sesión" value={draft.note}
+            <AutoTextarea id="inNote" className="note-ta" minRows={1} maxRows={8} placeholder="¿En qué estás trabajando?" maxLength={5000} aria-label="Nota de la sesión" title="Enter: nueva línea · Ctrl+Enter: guardar/iniciar" value={draft.note}
               onChange={e => setDraft({ note: e.target.value })} onBlur={actions.syncMeta}
-              onKeyDown={e => { if (e.key === 'Enter') { actions.syncMeta(); if (!a) actions.start(); (e.target as HTMLInputElement).blur(); } }} />
+              onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); actions.syncMeta(); if (!a) actions.start(); (e.target as HTMLTextAreaElement).blur(); } }} />
             <input id="inTag" placeholder="Proyecto" maxLength={40} list="tagList" style={{ maxWidth: 140 }} aria-label="Proyecto o etiqueta" value={draft.tag}
               onChange={e => setDraft({ tag: e.target.value })} onBlur={actions.syncMeta}
               onKeyDown={e => { if (e.key === 'Enter') { actions.syncMeta(); if (!a) actions.start(); (e.target as HTMLInputElement).blur(); } }} />

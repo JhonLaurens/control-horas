@@ -125,7 +125,7 @@ public class ExportService {
             long prev = a;
             for (PauseDto p : ps) if (p.start() >= prev) { clean.add(p); prev = p.end(); }
             try {
-                sessions.create(new SessionInput(id, a, b, clean, cut(s.path("note").asText(""), 200), cut(s.path("tag").asText(""), 40), s.path("extra").asBoolean(false)), true);
+                sessions.create(new SessionInput(id, a, b, clean, cut(s.path("note").asText(""), 5000), cut(s.path("tag").asText(""), 40), s.path("extra").asBoolean(false)), true);
                 ids.add(id);
                 imported++;
             } catch (RuntimeException e) {

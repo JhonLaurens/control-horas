@@ -15,7 +15,7 @@ public class WorkSession {
     private Instant startAt;
     @Column(name = "end_at")
     private Instant endAt;
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false, columnDefinition = "text")
     private String note = "";
     @Column(nullable = false, length = 40)
     private String tag = "";

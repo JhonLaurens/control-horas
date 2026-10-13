@@ -20,13 +20,13 @@ public final class Dtos {
             @NotNull Long start,
             @NotNull Long end,
             @Valid List<PauseDto> pauses,
-            @Size(max = 200) String note,
+            @Size(max = 5000) String note,
             @Size(max = 40) String tag,
             Boolean extra) {}
 
-    public record StartInput(@Size(max = 200) String note, @Size(max = 40) String tag, Boolean extra) {}
+    public record StartInput(@Size(max = 5000) String note, @Size(max = 40) String tag, Boolean extra) {}
 
-    public record ActivePatch(@Size(max = 200) String note, @Size(max = 40) String tag, Boolean extra) {}
+    public record ActivePatch(@Size(max = 5000) String note, @Size(max = 40) String tag, Boolean extra) {}
 
     public record SettingsDto(
             @NotNull @Pattern(regexp = HM) String schedStart,

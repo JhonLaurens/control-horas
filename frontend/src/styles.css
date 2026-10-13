@@ -323,7 +323,7 @@ dialog::backdrop{background:rgba(5,8,15,.55);backdrop-filter:blur(6px)}
 /* ---------- Pantallas grandes ---------- */
 td.typcell{white-space:normal;min-width:200px}
 td.typcell .typ{white-space:nowrap;display:inline-block}
-td.note{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;max-width:none;min-width:260px;width:26%;line-height:1.4}
+td.note{white-space:pre-wrap;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;max-width:none;min-width:260px;width:26%;line-height:1.4}
 @media (min-width:1280px){
   .g-hero{grid-template-columns:minmax(420px,1fr) minmax(0,1.25fr)}
   th,td{padding:10px 12px}
@@ -340,3 +340,11 @@ td.note{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:any
   .kpis{grid-template-columns:repeat(4,1fr)}
   .chart{height:360px}
 }
+
+/* ---------- Notas multilínea ---------- */
+textarea.note-ta{height:auto;min-height:38px;padding:9px 12px;line-height:1.45;resize:vertical;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13.5px}
+dialog:has(#fNote){width:min(760px,94vw)}
+.meta{align-items:flex-start}
+.meta .chipbtn{flex:none}
+.sess .nt{white-space:pre-wrap;overflow-wrap:anywhere}
+@media (min-width:1600px){td.note{width:32%;min-width:320px}}
