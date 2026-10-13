@@ -36,7 +36,7 @@ export function HistoryView() {
         <td className="num"><b>{dur(br.work, 1)}</b></td>
         <td className="num">{br.ord >= M ? dur(br.ord, 1) : '—'}</td>
         <td className="num" style={br.extra >= M ? { color: 'var(--warn)', fontWeight: 600 } : undefined}>{br.extra >= M ? dur(br.extra, 1) : '—'}</td>
-        <td style={{ whiteSpace: 'normal', minWidth: 260 }}><TypeChips b={br} amt />{s.extra && <span className="typ x" title="Marcada manualmente">Manual</span>}</td>
+        <td className="typcell"><TypeChips b={br} amt />{s.extra && <span className="typ x" title="Marcada manualmente">Manual</span>}</td>
         <td className="num">{p >= M ? dur(p, 1) : '—'}</td>
         <td>{s.tag && <span className="tag" style={{ margin: 0 }}>{s.tag}</span>}</td>
         <td className="note" title={s.note}>{s.note}</td>
