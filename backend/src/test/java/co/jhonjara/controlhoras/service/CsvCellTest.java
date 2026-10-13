@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 class CsvCellTest {
     @Test
     void notaMultilineaSeConservaEntreComillas() {
-        String nota = "Portal Presupuesto – ajustes\n- REQ-03: \"filtro\" por área\n- REQ-04; exportar";
-        assertEquals("\"Portal Presupuesto – ajustes\n- REQ-03: \"\"filtro\"\" por área\n- REQ-04; exportar\"", ExportService.cell(nota));
+        String nota = "Proyecto Demo – ajustes\n- Tarea 1: \"filtro\" por área\n- Tarea 2; exportar";
+        assertEquals("\"Proyecto Demo – ajustes\n- Tarea 1: \"\"filtro\"\" por área\n- Tarea 2; exportar\"", ExportService.cell(nota));
     }
 }

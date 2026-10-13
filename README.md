@@ -1,137 +1,177 @@
-# Control de Horas
+# ⏱️ Control de Horas Extra
 
-Aplicación personal para registrar la jornada laboral (inicio, pausas y fin) y clasificar **automáticamente** cada minuto según las reglas colombianas de jornada **diurna / nocturna**, **horas extra**, **dominicales y festivos** y **sábados / días de descanso**. Solo cuenta **horas**: no calcula pagos ni recargos.
+[![CI](https://github.com/JhonLaurens/control-horas/actions/workflows/ci.yml/badge.svg)](https://github.com/JhonLaurens/control-horas/actions/workflows/ci.yml)
+![Java 21](https://img.shields.io/badge/Java-21-orange)
+![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F)
+![React 18](https://img.shields.io/badge/React-18-61DAFB)
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-336791)
+![Licencia MIT](https://img.shields.io/badge/licencia-MIT-blue)
 
-- **Frontend:** React 18 + Vite + TypeScript (servido por nginx)
-- **Backend:** Spring Boot 3.5 + Java 21 (API REST, Spring Data JPA, Flyway, Bean Validation, Actuator)
-- **Base de datos:** PostgreSQL 16
-- **Despliegue:** Docker Compose (local, un solo usuario, sin autenticación, puertos solo en `127.0.0.1`)
+Aplicación web para **registrar horas extra** y clasificarlas automáticamente según las reglas laborales de **Colombia**: extra diurna/nocturna, dominical/festiva y de sábado o día de descanso. Solo cuenta **horas**; no calcula pagos ni recargos.
 
-![Pantalla principal](docs/captura-principal.png)
+La idea es simple: inicias el cronómetro cuando empiezas a trabajar fuera de tu horario, lo finalizas al terminar, y la app reparte cada minuto en la categoría correcta, incluso si la sesión cruza la medianoche, cae en festivo o pasa la frontera de la jornada nocturna.
 
-## Funcionalidades
+![Pantalla Hoy](docs/screenshots/hoy.png)
 
-- Cronómetro en vivo con **Iniciar / Pausar / Reanudar / Finalizar**. La jornada en curso queda guardada en PostgreSQL: sobrevive a recargas, cierres del navegador y reinicios del PC.
-- Anillo de progreso hacia la jornada ordinaria del día, KPIs (ordinarias, extra, pausas/almuerzo y semana), línea de tiempo del día y avisos al pasar la hora de salida o completar la jornada.
-- Vistas **Semana** y **Mes** con barras ordinarias + extra, meta diaria, calendario de calor, festivos del mes y desglose **por categoría** y **por proyecto**.
-- **Historial** con filtros, edición, eliminación (con *Deshacer*), exportación **CSV** (Excel en español: `;`, coma decimal, BOM) y **respaldo JSON**.
-- **Importación del respaldo JSON de la versión HTML** (`legacy/ControlHoras.html`): botón *Importar* en Historial. Las sesiones repetidas o inválidas se omiten, así que reimportar no duplica datos.
-- Ajustes: horario (por defecto 07:30 – 17:30, lunes a viernes), almuerzo no remunerado (90 min, editable a 0), inicio/fin de la jornada nocturna, tema claro/oscuro y color de acento.
-- Atajos: `Espacio` iniciar/finalizar · `P` pausa · `X` marcar extra · `N` sesión manual · `T` tema · `1–5` vistas · `?` barra de atajos.
+> Todas las capturas usan **datos de ejemplo**.
 
-## Reglas de clasificación
+## ✨ Funcionalidades
 
-| Categoría | Cuándo aplica |
+- **Reloj en vivo** (hora de Bogotá) con la categoría vigente y la cuenta regresiva hasta que empiezan las horas extra.
+- **Cronómetro** Iniciar / Pausar / Reanudar / Finalizar. La sesión en curso se guarda en PostgreSQL y sobrevive a recargas y reinicios.
+- Anillo de progreso contra el **límite legal de 2 h extra/día**, con un anillo interior para el de **12 h/semana**, y una línea de tiempo del día.
+- **Notas multilínea** (viñetas, saltos de línea; hasta 5000 caracteres) y proyecto por sesión.
+- Vistas **Semana** y **Mes**: barras por día, calendario de calor, festivos del mes y desglose por categoría y por proyecto.
+- **Historial** con filtros, búsqueda, edición, sesiones manuales y eliminación con *Deshacer*.
+- **Exportación CSV** (compatible con Excel en español: `;`, coma decimal, BOM UTF-8) y **respaldo/importación JSON**.
+- **Responsive**: escritorio ancho (hasta 1920 px y más), portátil y móvil (navegación inferior).
+- Tema oscuro/claro, color de acento y atajos de teclado (`Espacio`, `P`, `N`, `1–5`, `?`).
+
+## ⚖️ Reglas de clasificación
+
+| Situación | Categoría |
 |---|---|
-| Ordinaria diurna / nocturna | Día laboral, dentro del horario, hasta completar la jornada (horario − almuerzo; por defecto 8 h 30 m) |
-| Extra diurna / nocturna | Día laboral: antes de la entrada, después de la salida, lo que excede la jornada o sesiones marcadas como *Extra* |
-| Dominical/festivo diurna / nocturna | Todo lo trabajado en domingo o festivo |
-| Sábado/descanso diurna / nocturna | Todo lo trabajado en sábado o en un día no marcado como laboral |
+| Día hábil (lun–vie, no festivo) **dentro del horario** (por defecto 07:30–17:30) | **No cuenta.** La app solo registra horas extra |
+| Día hábil, antes de la entrada o después de la salida | Extra diurna / Extra nocturna |
+| Domingo o festivo (todo el día) | Dominical/festivo diurna / nocturna |
+| Sábado o día no laboral (todo el día) | Sábado/descanso diurna / nocturna |
 
-- **Jornada nocturna (CST art. 160):** desde el **25 de diciembre de 2025** va de **19:00 a 06:00** (Ley 2466 de 2025). Antes de esa fecha se aplica **21:00 a 06:00** (Ley 1846 de 2017). La frontera se aplica según la fecha de cada día y se puede personalizar en Ajustes.
-- Las sesiones que cruzan la medianoche se dividen por día calendario. Así, un festivo o domingo solo afecta sus propias horas.
-- **Festivos de Colombia** calculados para cualquier año: fijos, Ley Emiliani (traslado al lunes) y los basados en la Pascua.
-- La meta semanal se reduce automáticamente cuando la semana tiene festivos.
+- **Jornada nocturna:** desde el **25 de diciembre de 2025** va de **19:00 a 06:00** (Ley 2466 de 2025, que modifica el art. 160 del CST). Antes de esa fecha se aplica **21:00 a 06:00** (Ley 1846 de 2017). La frontera se aplica según la fecha de cada día.
+- **Festivos de Colombia** calculados para cualquier año: fechas fijas, traslados al lunes (**Ley Emiliani**, Ley 51 de 1983) y festivos basados en la Pascua.
+- Las sesiones que cruzan la medianoche se dividen por día calendario, así que un domingo o festivo solo afecta sus propias horas.
+- Si inicias una sesión dentro del horario laboral, la app te avisa y la sesión cuenta 0 hasta la hora de salida. Las sesiones marcadas manualmente como *Extra* cuentan completas.
+- Horario, días laborales e inicio/fin nocturno se pueden ajustar en **Ajustes**.
 
-El mismo algoritmo existe en el backend (`HourClassifier.java`, fuente de verdad para resúmenes y CSV) y en el frontend (`engine.ts`, para el cronómetro en vivo). Ambos se validan con los **mismos casos de prueba**: `shared/classification-vectors.json`.
+El mismo algoritmo vive en el backend (`HourClassifier.java`, fuente de verdad de resúmenes y CSV) y en el frontend (`engine.ts`, cronómetro en vivo). Ambos se validan contra los **mismos casos de prueba**: [`shared/classification-vectors.json`](shared/classification-vectors.json).
 
-## Puesta en marcha con Docker (Windows, macOS o Linux)
+## 🏗️ Arquitectura
 
-Requisitos: Docker Desktop / Docker Engine con Compose v2.
+```mermaid
+flowchart LR
+    U[Navegador] -->|http://localhost:8092| N[nginx<br/>SPA React + Vite + TS]
+    N -->|/api/*| B[Spring Boot 3.5<br/>Java 21]
+    B -->|JPA + Flyway| D[(PostgreSQL 16)]
+    subgraph Docker Compose
+      N
+      B
+      D
+    end
+    B -.->|motor de clasificación| E[HourClassifier]
+    N -.->|motor en vivo| F[engine.ts]
+    E <-.->|vectores compartidos| V[shared/classification-vectors.json]
+    F <-.-> V
+```
 
-```powershell
-cd C:\innovacion\control-horas
-copy .env.example .env        # luego edita .env y cambia POSTGRES_PASSWORD
+| Capa | Tecnología |
+|---|---|
+| Frontend | React 18, Vite 6, TypeScript, CSS propio (estilo Fluent), Vitest |
+| Backend | Spring Boot 3.5, Java 21, Spring Data JPA, Flyway, Bean Validation, Actuator, JUnit 5 |
+| Base de datos | PostgreSQL 16 |
+| Infraestructura | Docker Compose, nginx, GitHub Actions |
+
+## 🚀 Inicio rápido (Docker)
+
+Requisitos: Docker Desktop o Docker Engine con Compose v2.
+
+```bash
+git clone https://github.com/JhonLaurens/control-horas.git
+cd control-horas
+cp .env.example .env          # en Windows: copy .env.example .env
+# edita .env y define una contraseña propia en POSTGRES_PASSWORD
 docker compose up -d --build
 docker compose ps             # los 3 servicios deben quedar "healthy"
 ```
 
-Abre **http://localhost:8092**.
-
-| Servicio | URL local | Notas |
+| Servicio | URL | Notas |
 |---|---|---|
 | Interfaz web | http://localhost:8092 | nginx sirve la SPA y redirige `/api` al backend |
 | API REST | http://localhost:8093/api | Acceso directo opcional al backend |
 | Salud | http://localhost:8092/api/health | `{"status":"UP"}` |
 
-Si un puerto está ocupado, cámbialo en `.env` (`FRONTEND_PORT`, `BACKEND_PORT`). En este PC el 8090 lo usa Windows (HTTP.sys), por eso se usan 8092/8093.
+Los puertos solo escuchan en `127.0.0.1`. Si están ocupados, cámbialos en `.env` (`FRONTEND_PORT`, `BACKEND_PORT`).
 
-El primer `build` descarga dependencias y ejecuta las pruebas unitarias (backend y frontend). Para compilar más rápido define `SKIP_TESTS=true` en `.env`.
-
-### Operación diaria
-
-```powershell
-docker compose stop                 # detener (los datos se conservan)
-docker compose start                # volver a iniciar
-docker compose logs -f backend      # ver logs
-docker compose up -d --build        # actualizar tras cambiar el código
+```bash
+docker compose stop            # detener (los datos se conservan)
+docker compose up -d --build   # actualizar tras cambiar el código
+docker compose logs -f backend # ver logs
 ```
-
-Los contenedores usan `restart: unless-stopped`: arrancan solos con Docker Desktop.
-
-### Respaldo y restauración de la base de datos
-
-```powershell
-# Respaldo (archivo SQL)
-docker compose exec -T db pg_dump -U controlhoras controlhoras > respaldo.sql
-# Restauración
-Get-Content respaldo.sql | docker compose exec -T db psql -U controlhoras controlhoras
-```
-
-También puedes descargar el respaldo JSON desde **Historial → Respaldo JSON** e importarlo después.
 
 > ⚠️ `docker compose down -v` **borra el volumen** con todos los datos. Usa `docker compose down` (sin `-v`) para conservarlos.
 
-## Desarrollo local (sin Docker)
+**Respaldo de la base de datos:**
+
+```bash
+docker compose exec -T db pg_dump -U controlhoras controlhoras > respaldo.sql
+```
+
+También puedes descargar un respaldo JSON desde **Historial → Respaldo JSON**.
+
+## 🧪 Pruebas
+
+```bash
+cd backend  && mvn test                     # JUnit: festivos, clasificador (vectores compartidos), CSV
+cd frontend && npm ci && npm test           # Vitest: motor TypeScript con los mismos vectores
+cd frontend && npm run build                # type-check + build de producción
+```
+
+La prueba de humo E2E (`e2e/`, Playwright) recorre la app contra una instancia real y **borra sus datos**: úsala solo contra una base de pruebas.
+
+GitHub Actions ejecuta las pruebas del backend y del frontend en cada push y pull request ([`ci.yml`](.github/workflows/ci.yml)).
+
+## 💻 Desarrollo local (sin Docker)
 
 ```bash
 # 1) PostgreSQL local con base/usuario "controlhoras" (o ajusta DB_URL, DB_USER, DB_PASSWORD)
-# 2) Backend (puerto 8080)
-cd backend && mvn spring-boot:run
-# 3) Frontend (puerto 5173, con proxy /api -> 8080)
-cd frontend && npm install && npm run dev
+cd backend && mvn spring-boot:run           # API en :8080
+cd frontend && npm install && npm run dev   # UI en :5173 con proxy /api -> :8080
 ```
 
-### Pruebas
+## 🔌 API REST (resumen)
 
-```bash
-cd backend && mvn test          # JUnit: festivos, clasificador (vectores compartidos), validaciones
-cd frontend && npm test         # Vitest: motor TypeScript con los mismos vectores
-cd e2e && npm install && APP_URL=http://localhost:8092 HTML_APP=$PWD/../legacy/ControlHoras.html node e2e.cjs
-```
-
-> La prueba E2E **borra los datos** de la instancia indicada. Úsala solo contra una base de pruebas.
-
-## API REST (resumen)
-
-Los instantes viajan como milisegundos desde epoch. Los errores usan `ProblemDetail` (RFC 9457) con mensajes en español.
+Los instantes viajan como milisegundos desde epoch. Los errores usan `ProblemDetail` (RFC 9457).
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/api/state` | Sesiones terminadas, jornada activa y ajustes |
-| POST | `/api/active/start` · `/pause` · `/resume` · `/stop` | Control de la jornada en curso (409 si no aplica) |
-| PATCH | `/api/active` | Nota, proyecto o marca *extra* de la jornada en curso |
+| GET | `/api/state` | Sesiones, sesión activa y ajustes |
+| POST | `/api/active/start` · `/pause` · `/resume` · `/stop` | Control de la sesión en curso |
+| PATCH | `/api/active` | Nota, proyecto o marca *extra* de la sesión en curso |
 | GET/POST | `/api/sessions` | Listar / crear sesión manual |
 | PUT/DELETE | `/api/sessions/{id}` | Editar / eliminar |
 | GET/PUT | `/api/settings` | Ajustes |
-| GET | `/api/summary/day?date=` · `/week?date=` · `/month?year=&month=` · `/range?from=&to=` | Resúmenes con las 8 categorías |
+| GET | `/api/summary/day` · `/week` · `/month` · `/range` | Resúmenes por categoría |
 | GET | `/api/holidays?year=` | Festivos de Colombia |
-| GET | `/api/export/csv?from=&to=&q=` · `/api/export/json` | Exportar |
-| POST | `/api/import` | Importar respaldo JSON (versión HTML o esta app) |
-| DELETE | `/api/data` | Borrar todo |
+| GET | `/api/export/csv` · `/api/export/json` | Exportar |
+| POST | `/api/import` | Importar respaldo JSON |
 | GET | `/api/health` | Salud (Actuator) |
 
-## Estructura
+## 📁 Estructura
 
 ```
-backend/    Spring Boot (engine/, domain/, repo/, service/, web/, db/migration/)
-frontend/   React + Vite (lib/engine.ts, views/, components/, nginx.conf)
-shared/     Casos de prueba de clasificación compartidos
-e2e/        Prueba de humo de extremo a extremo (Playwright)
-legacy/     Versión original en un solo archivo HTML (sin conexión)
-docs/       Capturas
+backend/            Spring Boot (engine/, domain/, repo/, service/, web/, db/migration/)
+frontend/           React + Vite (lib/engine.ts, views/, components/, nginx.conf)
+shared/             Casos de prueba de clasificación compartidos backend/frontend
+e2e/                Prueba de humo de extremo a extremo (Playwright)
+legacy/             Versión original en un solo archivo HTML (funciona sin conexión)
+docs/screenshots/   Capturas con datos de ejemplo
+.github/workflows/  Integración continua
 ```
 
-## Licencia
+## 📸 Capturas
 
-Proyecto personal. Uso privado.
+| Semana | Mes |
+|---|---|
+| ![Semana](docs/screenshots/semana.png) | ![Mes](docs/screenshots/mes.png) |
+
+| Historial con notas multilínea | Editar sesión |
+|---|---|
+| ![Historial](docs/screenshots/historial.png) | ![Editar sesión](docs/screenshots/editar-sesion.png) |
+
+<p align="center"><img src="docs/screenshots/movil.png" alt="Vista móvil" width="300"></p>
+
+## ⚠️ Aviso
+
+Esta herramienta es un proyecto personal de código abierto para **llevar la cuenta de horas**. **No constituye asesoría legal ni laboral**, y no reemplaza la liquidación oficial de un empleador. Las reglas implementadas reflejan la interpretación del autor de la normativa vigente a 2026; verifica siempre con la fuente oficial o un profesional.
+
+## 📄 Licencia
+
+[MIT](LICENSE) © 2026 JhonLaurens

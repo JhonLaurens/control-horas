@@ -30,16 +30,16 @@ const H = 3600000;
     await p2.evaluate(() => {
       const at = (y, m, d, h, mi = 0) => new Date(y, m - 1, d, h, mi).getTime();
       const S = { sessions: [
-        { id: 'thu', start: at(2026, 10, 8, 6, 30), end: at(2026, 10, 8, 19, 30), pauses: [{ start: at(2026, 10, 8, 12), end: at(2026, 10, 8, 13) }], note: 'Cierre mensual', tag: 'Presupuesto' },
+        { id: 'thu', start: at(2026, 10, 8, 6, 30), end: at(2026, 10, 8, 19, 30), pauses: [{ start: at(2026, 10, 8, 12), end: at(2026, 10, 8, 13) }], note: 'Cierre mensual', tag: 'Proyecto Demo' },
         { id: 'fest', start: at(2026, 10, 12, 8), end: at(2026, 10, 12, 12), pauses: [], note: 'Soporte festivo', tag: 'Soporte' },
         { id: 'sat', start: at(2026, 10, 3, 9), end: at(2026, 10, 3, 11), pauses: [], note: '', tag: '' },
-        { id: 'lunch', start: at(2026, 10, 6, 7, 30), end: at(2026, 10, 6, 17, 30), pauses: [{ start: at(2026, 10, 6, 12), end: at(2026, 10, 6, 14) }], note: 'Reuniones', tag: 'Presupuesto' },
+        { id: 'lunch', start: at(2026, 10, 6, 7, 30), end: at(2026, 10, 6, 17, 30), pauses: [{ start: at(2026, 10, 6, 12), end: at(2026, 10, 6, 14) }], note: 'Reuniones', tag: 'Proyecto Demo' },
         { id: 'mid', start: at(2026, 10, 1, 22), end: at(2026, 10, 2, 2), pauses: [], note: 'Despliegue', tag: 'Infra' },
         { id: 'man', start: at(2026, 10, 5, 9), end: at(2026, 10, 5, 11), pauses: [], note: '', tag: '', extra: true },
         { id: 'sun5', start: at(2026, 9, 20, 17), end: at(2026, 9, 20, 22), pauses: [], note: '', tag: '' },
         { id: 'satsun', start: at(2026, 9, 26, 23), end: at(2026, 9, 27, 2), pauses: [], note: '', tag: '' },
         { id: 'old', start: at(2025, 12, 10, 17, 30), end: at(2025, 12, 10, 22), pauses: [], note: '', tag: '' },
-        { id: 'wed', start: at(2026, 10, 7, 7, 25), end: at(2026, 10, 7, 18, 10), pauses: [{ start: at(2026, 10, 7, 12, 10), end: at(2026, 10, 7, 13, 30) }], note: 'Desarrollo API', tag: 'Presupuesto' },
+        { id: 'wed', start: at(2026, 10, 7, 7, 25), end: at(2026, 10, 7, 18, 10), pauses: [{ start: at(2026, 10, 7, 12, 10), end: at(2026, 10, 7, 13, 30) }], note: 'Desarrollo API', tag: 'Proyecto Demo' },
         { id: 'fri', start: at(2026, 10, 9, 7, 35), end: at(2026, 10, 9, 17, 40), pauses: [{ start: at(2026, 10, 9, 12), end: at(2026, 10, 9, 13, 25) }], note: 'Pruebas', tag: 'QA' },
         { id: 'tue', start: at(2026, 10, 13, 7, 30), end: at(2026, 10, 13, 19, 45), pauses: [{ start: at(2026, 10, 13, 12), end: at(2026, 10, 13, 13, 30) }], note: 'Post-festivo', tag: 'Soporte' },
         { id: 'bad', start: 5, end: 1, pauses: [] }
