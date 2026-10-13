@@ -4,7 +4,7 @@ import { atMin, bogotaParts, cap, hms, sod, tmin } from '../lib/time';
 
 const fmtDay = new Intl.DateTimeFormat('es-CO', { timeZone: 'America/Bogota', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-/** Reloj en tiempo real del encabezado: hora de Colombia, fecha, categoría vigente y tiempo hasta la salida. */
+/** Reloj en tiempo real del encabezado: hora de Colombia, fecha, categoría vigente y tiempo hasta que empiezan las horas extra. */
 export function LiveClock() {
   const { eng, now: t, state } = useStore();
   const st = state.settings; const a = state.active; const paused = openPause(a);
@@ -14,7 +14,7 @@ export function LiveClock() {
   const cls = eng.classAt(t, !!a?.extra);
   const inSched = info.working && t >= ws && t < we;
   const left = inSched ? hms(we - t) : null;
-  const night = cls.k.endsWith('N');
+  const night = !!cls.k?.endsWith('N');
   return (
     <div className="clock" id="liveClock" role="timer" aria-live="off" aria-label={`Hora actual ${h}:${m}:${s} ${ap}`}>
       <div className="clock-main">
@@ -29,7 +29,7 @@ export function LiveClock() {
           <i />{cls.l}
         </span>
         <span className={'clock-left' + (inSched ? '' : ' off')} id="clockLeft">
-          {inSched && left ? <>Salida {st.schedEnd} en <b>{left[0]}:{left[1]}:{left[2]}</b></> : 'Fuera de horario'}
+          {inSched && left ? <>Extras desde {st.schedEnd} en <b>{left[0]}:{left[1]}:{left[2]}</b></> : 'Cuenta como extra'}
         </span>
       </div>
     </div>

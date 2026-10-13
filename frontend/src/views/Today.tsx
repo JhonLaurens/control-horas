@@ -1,7 +1,7 @@
 import { useStore } from '../lib/store';
 import { AutoTextarea } from '../components/AutoTextarea';
 import { extraHint, openPause } from '../lib/engine';
-import { H, M, addDays, atMin, dur, hNum, hm, hms, p2, sod, sow, tmin } from '../lib/time';
+import { H, addDays, atMin, dur, hm, hms, p2, sod, sow, tmin } from '../lib/time';
 import { Icon } from '../components/icons';
 import { Big } from '../components/common';
 import { SessionRow } from '../components/SessionRow';
@@ -11,12 +11,12 @@ const C1 = 2 * Math.PI * 128, C2 = 2 * Math.PI * 108;
 export function Notice() {
   const { eng, now: t, state } = useStore();
   const a = state.active; const st = state.settings; const d0 = sod(t); const info = eng.dayInfo(d0); const B = eng.dayBreak(d0);
-  const paused = openPause(a); const cn = paused ? null : eng.classNow(t); const endT = atMin(d0, tmin(st.schedEnd)); const goal = info.goal;
+  const paused = openPause(a); const cn = paused ? null : eng.classNow(t); const endT = atMin(d0, tmin(st.schedEnd)); void B;
   let note: React.ReactNode = null;
   if (a && !info.working) note = <><b>{info.fest ? 'Hoy es festivo (' + info.fest + ')' : info.kind === 'sab' ? 'Hoy es sábado' : 'Hoy no es día laboral'}.</b> Todo el tiempo trabajado cuenta como hora extra {info.kind === 'sab' || info.kind === 'desc' ? 'de sábado/descanso' : 'dominical/festiva'} (diurna hasta las {eng.nightStartFor(d0)}, nocturna después).</>;
   else if (a && t >= endT) note = <><b>Ya pasaste tu hora de salida ({st.schedEnd}).</b> Desde ahora cuenta como hora extra ({cn ? cn.l.toLowerCase() : 'extra'}; nocturna desde las {eng.nightStartFor(d0)}).</>;
   else if (a && t < atMin(d0, tmin(st.schedStart))) note = <><b>Aún no es tu hora de entrada ({st.schedStart}).</b> Este tiempo cuenta como hora extra.</>;
-  else if (a && B.ord >= goal && !a.extra) note = <><b>Ya cumpliste tu jornada ordinaria de {hNum(goal / H)} h.</b> El tiempo adicional cuenta como hora extra.</>;
+  else if (a && !a.extra && eng.inSchedule(t)) note = <><b>Estás dentro de tu horario laboral ({st.schedStart} – {st.schedEnd}).</b> Este tiempo no cuenta: la app solo registra horas extra, que empiezan a contar a las {st.schedEnd} (faltan {dur(endT - t, 1)}).</>;
   else if (a && a.extra) note = <>Esta sesión está marcada manualmente como <b>horas extra</b>.</>;
   if (!note) return null;
   return <div className="notice" id="notice" role="status">{Icon.notice}<div>{note}</div></div>;
@@ -37,7 +37,7 @@ function Timeline() {
       const a = Math.max(x, d0), b = Math.min(y, d1); if (b <= a) return;
       const allX = !info.working || s.extra;
       const parts: [number, number, number][] = allX ? [[a, b, 1]] : [[a, Math.min(b, ws), 1], [Math.max(a, ws), Math.min(b, we), 0], [Math.max(a, we), b, 1]];
-      parts.forEach(([p, q, xx], k) => { if (q > p) segs.push(<div key={`${s.id}-${j}-${k}`} className="tl-seg" style={{ left: pc(p) + '%', width: (pc(q) - pc(p)) + '%', ...(xx ? { background: 'linear-gradient(90deg,var(--warn),#f97316)' } : {}) }} title={`${xx ? 'Extra' : 'Ordinaria'} ${hm(p)} – ${hm(q)}`} />); });
+      parts.forEach(([p, q, xx], k) => { if (q > p) segs.push(<div key={`${s.id}-${j}-${k}`} className="tl-seg" style={{ left: pc(p) + '%', width: (pc(q) - pc(p)) + '%', ...(xx ? { background: 'linear-gradient(90deg,var(--warn),#f97316)' } : { background: 'repeating-linear-gradient(45deg,color-mix(in srgb,var(--fg) 22%,transparent) 0 4px,transparent 4px 8px)' }) }} title={`${xx ? 'Extra' : 'Horario laboral (no cuenta)'} ${hm(p)} – ${hm(q)}`} />); });
     });
     s.pauses.forEach((p, j) => { const pa = Math.max(p.start, d0), pb = Math.min(p.end ?? t, d1); if (pb > pa) segs.push(<div key={`${s.id}-p${j}`} className="tl-seg p" style={{ left: pc(pa) + '%', width: (pc(pb) - pc(pa)) + '%' }} title={`Pausa ${hm(p.start)} – ${p.end ? hm(p.end) : 'ahora'}`} />); });
   }
@@ -54,15 +54,15 @@ function Timeline() {
 export function TodayView() {
   const { eng, now: t, state, draft, setDraft, actions } = useStore();
   const a = state.active; const st = state.settings; const paused = openPause(a);
-  const d0 = sod(t), d1 = addDays(d0, 1); const B = eng.dayBreak(d0), info = B.info, goal = info.goal, ref = goal || eng.dailyGoalMs() || H;
-  const cur = a ? eng.workIn(a) : 0; const [h, m, s] = hms(a ? cur : B.work);
-  const pr = goal ? Math.min(1, B.ord / goal) : 0, ex = Math.min(1, B.extra / ref); const pct = goal ? Math.round(B.ord / goal * 100) : 0;
-  const cn = paused ? null : eng.classNow(t); const endT = atMin(d0, tmin(st.schedEnd));
-  let ordH = !info.working ? info.label : B.ord >= goal ? 'Jornada ordinaria cumplida' : t >= endT ? `Horario terminado · faltaron ${dur(goal - B.ord, 1)}`
-    : a && !paused && cn && !cn.x ? `Completarías a las ${hm(Math.min(t + goal - B.ord, endT))}` : `Faltan ${dur(goal - B.ord, 1)} · salida ${st.schedEnd}`;
-  if (B.oN >= M) ordH += ` · nocturna ${dur(B.oN, 1)}`;
+  const d0 = sod(t), d1 = addDays(d0, 1); const B = eng.dayBreak(d0), info = B.info;
+  // Solo horas extra: el cronómetro muestra el tiempo que cuenta (excluye el horario laboral).
+  const cur = a ? eng.sessBreak(a).work : 0; const [h, m, s] = hms(a ? cur : B.extra);
+  const DAY_LIM = 2 * H, WEEK_LIM = 12 * H; // límite legal de horas extra (CST art. 22): 2 h/día, 12 h/semana
+  const cn = paused ? null : eng.classNow(t); const endT = atMin(d0, tmin(st.schedEnd)); const inSch = eng.inSchedule(t);
+  const night = B.eN + B.fN + B.sN;
   const np = eng.sessionsIn(d0, d1).reduce((n, x) => n + x.pauses.filter(p => (p.end ?? t) > d0 && p.start < d1).length, 0);
   const w0 = sow(t), WB = eng.rangeBreak(w0, addDays(w0, 7));
+  const pr = Math.min(1, B.extra / DAY_LIM), ex = Math.min(1, WB.extra / WEEK_LIM);
   const list = eng.sessionsIn(d0, d1).reverse();
   const tags = [...new Set(eng.all.map(x => x.tag).filter(Boolean))];
 
@@ -85,9 +85,8 @@ export function TodayView() {
             <div className="ring-center">
               <div className="timer" id="timer"><span className="hm">{h}:{m}</span><span className="sec">:{s}</span></div>
               <div className="ring-sub" id="ringSub">
-                {!info.working ? <>{info.fest ? 'Festivo' : 'Día no laboral'} · <b>{dur(B.extra, 1)}</b> extra</>
-                  : a ? <>Ordinarias <b>{dur(B.ord, 1)}</b> · {pct}% de {hNum(goal / H)} h</>
-                    : B.work ? `Hoy ${dur(B.work, 1)} · ${pct}% de la jornada` : `Jornada de hoy: ${hNum(goal / H)} h`}
+                {a && inSch && !a.extra ? <>Horario laboral · extras desde <b>{st.schedEnd}</b> (en {dur(endT - t, 1)})</>
+                  : <>{!info.working ? (info.fest ? 'Festivo · ' : 'Día no laboral · ') : ''}Extra hoy <b>{dur(B.extra, 1)}</b>{B.extra > DAY_LIM && info.working ? ' · supera 2 h/día' : ''}</>}
               </div>
               <div className={'pausetimer' + (paused ? ' on' : '')}>{paused ? `Pausa actual ${hms(t - paused.start).join(':')}` : a ? `Sesión iniciada a las ${hm(a.start)}` : ''}</div>
             </div>
@@ -116,16 +115,15 @@ export function TodayView() {
         </div>
         <div className="grid" style={{ alignContent: 'start' }}>
           <div className="kpis">
-            <div className="kpi" style={{ ['--c' as string]: 'var(--acc)' }}><div className="l"><i />Ordinarias hoy</div><div className="v" id="kOrd"><Big ms={B.ord} suffix={goal ? <small>/ {hNum(goal / H)} h</small> : null} /></div><div className="h" id="kOrdH">{ordH}</div><div className="bar"><b style={{ width: (goal ? Math.min(100, B.ord / goal * 100) : 0) + '%' }} /></div></div>
-            <div className="kpi" style={{ ['--c' as string]: 'var(--warn)' }}><div className="l"><i />Horas extra hoy</div><div className="v" id="kExt"><Big ms={B.extra} /></div><div className="h" id="kExtH">{extraHint(B)}</div></div>
-            <div className="kpi" style={{ ['--c' as string]: 'var(--pause)' }}><div className="l"><i />Pausas / almuerzo</div><div className="v" id="kPause"><Big ms={B.pause} suffix={info.working && st.lunch ? <small>/ {st.lunch} m</small> : null} /></div>
-              {B.lunchOver >= M ? <div className="h warn" id="kPauseH">Almuerzo excedido en {dur(B.lunchOver, 1)} (máx. {st.lunch} min)</div>
-                : <div className="h" id="kPauseH">{np ? (info.working ? `${np} pausa${np > 1 ? 's' : ''} · dentro del almuerzo` : `${np} pausa${np > 1 ? 's' : ''}`) : 'Sin pausas'}</div>}
+            <div className="kpi" style={{ ['--c' as string]: 'var(--warn)' }}><div className="l"><i />Horas extra hoy</div><div className="v" id="kExt"><Big ms={B.extra} /></div><div className="h" id="kExtH">{extraHint(B)}</div><div className="bar"><b style={{ width: Math.min(100, B.extra / DAY_LIM * 100) + '%', background: 'linear-gradient(90deg,var(--warn),#f97316)' }} /></div></div>
+            <div className="kpi" style={{ ['--c' as string]: 'var(--acc2)' }}><div className="l"><i />Nocturnas hoy</div><div className="v" id="kNight"><Big ms={night} /></div><div className="h">Desde las {eng.nightStartFor(d0)} hasta las {st.nightEnd || '06:00'}</div></div>
+            <div className="kpi" style={{ ['--c' as string]: 'var(--pause)' }}><div className="l"><i />Pausas</div><div className="v" id="kPause"><Big ms={B.pause} /></div>
+              <div className="h" id="kPauseH">{np ? `${np} pausa${np > 1 ? 's' : ''} · no cuentan como extra` : 'Sin pausas'}</div>
             </div>
-            <div className="kpi" style={{ ['--c' as string]: '#06b6d4' }}><div className="l"><i />Esta semana</div><div className="v" id="kWeek"><Big ms={WB.work} suffix={<small>/ {hNum(WB.goal / H)} h</small>} /></div><div className="bar"><b style={{ width: (WB.goal ? Math.min(100, WB.ord / WB.goal * 100) : 0) + '%' }} /></div></div>
+            <div className="kpi" style={{ ['--c' as string]: '#06b6d4' }}><div className="l"><i />Extras esta semana</div><div className="v" id="kWeek"><Big ms={WB.extra} suffix={<small>/ 12 h</small>} /></div><div className="h">Límite legal 12 h/semana · {extraHint(WB)}</div><div className="bar"><b style={{ width: Math.min(100, WB.extra / WEEK_LIM * 100) + '%' }} /></div></div>
           </div>
           <div className="card">
-            <h2>Línea de tiempo de hoy<span className="sp" /><span className="legend"><span><i style={{ background: 'linear-gradient(90deg,var(--acc),var(--acc2))' }} />Trabajo</span><span><i style={{ background: 'var(--warn)' }} />Extra</span><span><i style={{ background: 'repeating-linear-gradient(45deg,var(--pause) 0 3px,transparent 3px 6px)' }} />Pausa</span></span></h2>
+            <h2>Línea de tiempo de hoy<span className="sp" /><span className="legend"><span><i style={{ background: 'repeating-linear-gradient(45deg,color-mix(in srgb,var(--fg) 35%,transparent) 0 3px,transparent 3px 6px)' }} />Horario (no cuenta)</span><span><i style={{ background: 'var(--warn)' }} />Extra</span><span><i style={{ background: 'repeating-linear-gradient(45deg,var(--pause) 0 3px,transparent 3px 6px)' }} />Pausa</span></span></h2>
             <Timeline />
           </div>
         </div>

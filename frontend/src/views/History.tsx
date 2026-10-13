@@ -33,8 +33,6 @@ export function HistoryView() {
         <td>{cap(fmtDate.format(s.start))}{f && <> <span className="badge" style={{ color: 'var(--warn)', borderColor: 'color-mix(in srgb,var(--warn) 40%,transparent)' }} title={f}>Festivo</span></>}</td>
         <td>{hm(s.start)}</td>
         <td>{s.end ? hm(s.end) : <span className="badge live" style={{ margin: 0 }}>En curso</span>}{cross && <> <span className="badge">+1 día</span></>}</td>
-        <td className="num"><b>{dur(br.work, 1)}</b></td>
-        <td className="num">{br.ord >= M ? dur(br.ord, 1) : '—'}</td>
         <td className="num" style={br.extra >= M ? { color: 'var(--warn)', fontWeight: 600 } : undefined}>{br.extra >= M ? dur(br.extra, 1) : '—'}</td>
         <td className="typcell"><TypeChips b={br} amt />{s.extra && <span className="typ x" title="Marcada manualmente">Manual</span>}</td>
         <td className="num">{p >= M ? dur(p, 1) : '—'}</td>
@@ -66,7 +64,7 @@ export function HistoryView() {
         </div>
         <div className="tbl-wrap">
           <table>
-            <thead><tr><th>Fecha</th><th>Inicio</th><th>Fin</th><th className="num">Trabajado</th><th className="num">Ordinarias</th><th className="num">Extra</th><th>Tipo</th><th className="num">Pausas</th><th>Proyecto</th><th>Nota</th><th /></tr></thead>
+            <thead><tr><th>Fecha</th><th>Inicio</th><th>Fin</th><th className="num">Horas extra</th><th>Tipo</th><th className="num">Pausas</th><th>Proyecto</th><th>Nota</th><th /></tr></thead>
             <tbody id="hBody">{rows.length ? body : <tr><td colSpan={11}><div className="empty">No hay sesiones en este rango</div></td></tr>}</tbody>
             {rows.length > 0 && <tfoot><tr><td colSpan={3}>{rows.length} sesi{rows.length > 1 ? 'ones' : 'ón'}</td><td className="num">{dur(tw, 1)}</td><td className="num">{dur(to2, 1)}</td><td className="num" style={{ color: 'var(--warn)' }}>{dur(tx, 1)}</td><td /><td className="num">{dur(tp, 1)}</td><td colSpan={3}>{hDec(tw)} h en decimal · {hDec(tx)} h extra</td></tr></tfoot>}
           </table>

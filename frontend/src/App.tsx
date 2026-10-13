@@ -19,7 +19,7 @@ function DayChips() {
   const { eng, now: t, state } = useStore(); const st = state.settings; const info = eng.dayInfo(sod(t)); const nh = nextHoliday(addDays(sod(t), 1));
   return (
     <div className="daychips" id="dayChips">
-      {info.working ? <span className="chip"><i />Día laboral · {st.schedStart} – {st.schedEnd} · almuerzo {st.lunch} min</span>
+      {info.working ? <span className="chip"><i />Día laboral · {st.schedStart} – {st.schedEnd} no cuenta · extras desde {st.schedEnd}</span>
         : <span className="chip fest"><i />{info.fest ? 'Hoy es festivo: ' + info.fest : info.kind === 'sab' ? 'Hoy es sábado' : info.kind === 'dom' ? 'Hoy es domingo' : 'Día de descanso'} · no laboral, todo cuenta como extra</span>}
       {nh && <span className="chip" style={{ ['--c' as string]: 'var(--warn)' }}><i />Próximo festivo: {fmtWDM.format(parseLocal(nh.date, '00:00'))} · {nh.name}</span>}
     </div>
@@ -28,7 +28,7 @@ function DayChips() {
 
 function SideStatus() {
   const { eng, now: t, state } = useStore(); const a = state.active; const paused = openPause(a);
-  const B = eng.dayBreak(sod(t)); const [h, m, s] = hms(a ? eng.workIn(a) : B.work);
+  const B = eng.dayBreak(sod(t)); const [h, m, s] = hms(a ? eng.sessBreak(a).work : B.extra);
   return (
     <div className="side-status" id="sideStatus">
       <div>{a ? (paused ? 'En pausa' : 'Jornada en curso') : 'Sin jornada activa'}</div>
@@ -46,7 +46,7 @@ export function App() {
   // Título de la pestaña
   useEffect(() => {
     const paused = openPause(a); const cn = paused ? null : eng.classNow(t);
-    const [h, m, s] = hms(a ? eng.workIn(a) : 0);
+    const [h, m, s] = hms(a ? eng.sessBreak(a).work : 0);
     document.title = a ? `${paused ? '❚❚ ' : '● '}${h}:${m}:${s}${cn && cn.x ? ' · Extra' : ''} · Control de Horas` : 'Control de Horas';
   }, [t, a, eng]);
 
@@ -57,7 +57,7 @@ export function App() {
     if (info.working && t >= atMin(d0, tmin(st.schedEnd)) && st.endNotified !== day) {
       actions.saveSettings({ endNotified: day }); toast('Ya pasaste tu hora de salida, desde ahora cuenta como hora extra', '', null, 7000);
     }
-    if (info.working && B.ord >= info.goal && st.goalNotified !== day) {
+    if (false && info.working && B.ord >= info.goal && st.goalNotified !== day) { // solo horas extra: sin meta ordinaria
       actions.saveSettings({ goalNotified: day }); toast(`Jornada ordinaria de ${hNum(info.goal / H)} h cumplida`, 'ok');
     }
   }, [t, a, eng, st, loaded, actions, toast]);

@@ -64,7 +64,7 @@ describe('reloj en vivo', () => {
   });
   it('categoría vigente sin jornada activa', () => {
     const e = new Engine(DEFAULT_SETTINGS, [], null, NOW);
-    expect(e.classAt(t('2026-10-09T10:00')).k).toBe('oD');   // viernes laboral, en horario
+    expect(e.classAt(t('2026-10-09T10:00')).k).toBeNull();   // viernes laboral, en horario: no cuenta
     expect(e.classAt(t('2026-10-09T18:00')).k).toBe('eD');   // después de la salida
     expect(e.classAt(t('2026-10-09T20:00')).k).toBe('eN');   // nocturna desde 19:00
     expect(e.classAt(t('2026-10-09T06:30')).k).toBe('eD');   // antes de la entrada, diurna
@@ -72,5 +72,17 @@ describe('reloj en vivo', () => {
     expect(e.classAt(t('2026-10-11T21:00')).k).toBe('fN');   // domingo nocturna
     expect(e.classAt(t('2026-10-12T10:00')).k).toBe('fD');   // festivo Día de la Raza
     expect(e.classAt(t('2026-10-09T10:00'), true).k).toBe('eD'); // marcada como extra
+  });
+});
+
+describe('solo horas extra', () => {
+  it('sesión iniciada dentro del horario cuenta 0 hasta las 17:30', () => {
+    const a: Session = { id: 'a', start: t('2026-10-09T16:00'), end: null, pauses: [], note: '', tag: '', extra: false };
+    const e1 = new Engine(DEFAULT_SETTINGS, [], a, t('2026-10-09T17:00'));
+    expect(e1.sessBreak(a).work).toBe(0);
+    expect(e1.inSchedule(t('2026-10-09T17:00'))).toBe(true);
+    const e2 = new Engine(DEFAULT_SETTINGS, [], a, t('2026-10-09T18:00'));
+    expect(e2.sessBreak(a).eD / H).toBeCloseTo(0.5, 9);
+    expect(e2.sessBreak(a).ord).toBe(0);
   });
 });

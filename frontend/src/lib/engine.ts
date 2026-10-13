@@ -42,7 +42,7 @@ export class Engine {
   dayInfo(d0: number): DayInfo {
     const dow = new Date(d0).getDay(), fest = holidayName(d0); const working = !fest && this.settings.workdays.includes(dow);
     const kind = fest ? 'fest' : working ? 'lab' : dow === 0 ? 'dom' : dow === 6 ? 'sab' : 'desc';
-    return { d0, dow, fest, working, kind, goal: working ? this.dailyGoalMs() : 0,
+    return { d0, dow, fest, working, kind, goal: 0,
       label: fest ? 'Festivo · ' + fest : kind === 'dom' ? 'Domingo · día no laboral' : kind === 'sab' ? 'Sábado · día no laboral' : kind === 'desc' ? 'Día de descanso' : 'Día laboral' };
   }
   sEnd(s: Session) { return s.end ?? this.now; }
@@ -75,17 +75,17 @@ export class Engine {
       R.per[s.id] = zero(); R.pause += this.pauseIn(s, d0, d1);
       for (const [a, b] of this.workInts(s)) { const x = Math.max(a, d0), y = Math.min(b, d1); if (y > x) pieces.push({ s, a: x, b: y }); }
     }
-    pieces.sort((p, q) => p.a - q.a); let used = 0;
+    pieces.sort((p, q) => p.a - q.a);
+    // Solo horas extra: en día hábil el tiempo dentro del horario no cuenta (salvo sesión marcada como extra).
     for (const { s, a, b } of pieces) {
-      const P = R.per[s.id]; P.work += b - a;
-      if (!info.working) { split(P, info.kind === 'fest' || info.kind === 'dom' ? 'f' : 's', a, b); continue; }
-      if (s.extra) { split(P, 'e', a, b); continue; }
-      const w0 = Math.max(a, W[0]), w1 = Math.min(b, W[1]);
-      if (w1 > w0) { const take = Math.min(w1 - w0, Math.max(0, goal - used)); used += take; split(P, 'o', w0, w0 + take); split(P, 'e', w0 + take, w1); }
+      const P = R.per[s.id];
+      if (!info.working) { P.work += b - a; split(P, info.kind === 'fest' || info.kind === 'dom' ? 'f' : 's', a, b); continue; }
+      if (s.extra) { P.work += b - a; split(P, 'e', a, b); continue; }
+      P.work += b - a - overlap(a, b, W[0], W[1]);
       split(P, 'e', a, Math.min(b, W[0])); split(P, 'e', Math.max(a, W[1]), b);
     }
     for (const id in R.per) { fin(R.per[id]); for (const k of KEYS) R[k] += R.per[id][k]; }
-    fin(R); if (info.working) R.lunchOver = Math.max(0, R.pause - this.lunchMs());
+    fin(R);
     this.memo.set(d0, R); return R;
   }
   rangeBreak(from: number, to: number): RangeBreak {
@@ -106,12 +106,17 @@ export class Engine {
     const d0 = sod(t), info = this.dayInfo(d0); const n = this.isNight(t) ? 'N' : 'D'; let k: string;
     if (!info.working) k = (info.kind === 'fest' || info.kind === 'dom' ? 'f' : 's') + n;
     else if (extra) k = 'e' + n;
-    else {
-      const inW = t >= atMin(d0, tmin(this.settings.schedStart)) && t < atMin(d0, tmin(this.settings.schedEnd));
-      k = (inW && this.dayBreak(d0).ord < this.dailyGoalMs() ? 'o' : 'e') + n;
-    }
-    return { x: k[0] !== 'o', k: k as CatKey, l: CAT_LABEL[k as CatKey] };
+    else if (this.inSchedule(t)) return { x: false, k: null, l: 'Horario laboral · no cuenta' };
+    else k = 'e' + n;
+    return { x: true, k: k as CatKey | null, l: CAT_LABEL[k as CatKey] };
   }
+  /** ¿t cae dentro del horario laboral de un día hábil? (ese tiempo no cuenta) */
+  inSchedule(t: number) {
+    const d0 = sod(t); if (!this.dayInfo(d0).working) return false;
+    return t >= atMin(d0, tmin(this.settings.schedStart)) && t < atMin(d0, tmin(this.settings.schedEnd));
+  }
+  /** Inicio de horas extra del día (fin del horario). */
+  overtimeStart(t: number) { return atMin(sod(t), tmin(this.settings.schedEnd)); }
   /** Categoría del tiempo que corre ahora mismo en la jornada activa. */
   classNow(t: number) {
     const a = this.active; if (!a) return null;

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store';
 import { legalNightStart } from '../lib/engine';
 import { holidays, nextHoliday } from '../lib/holidays';
-import { H, cap, fmtWDM, hNum, isHM, parseLocal, sod, tmin, ymd } from '../lib/time';
+import { cap, fmtWDM, isHM, parseLocal, sod, tmin, ymd } from '../lib/time';
 import { ACCENTS } from '../lib/theme';
 import { Icon } from '../components/icons';
 import { useConfirm } from '../components/Confirm';
@@ -28,7 +28,7 @@ export function SettingsView() {
   const { state, eng, now, actions } = useStore();
   const confirm = useConfirm(); const toast = useToast();
   const st = state.settings; const [fy, setFy] = useState(new Date().getFullYear());
-  const g = eng.dailyGoalMs(); const today = ymd(now); const nh = nextHoliday(now);
+  const today = ymd(now); const nh = nextHoliday(now);
 
   const setTime = (key: 'schedStart' | 'schedEnd' | 'nightStart' | 'nightEnd', label: string) => (v: string) => {
     if (!isHM(v)) { toast('Hora no válida', 'bad'); return; }
@@ -42,13 +42,8 @@ export function SettingsView() {
     <section className="view on" id="v-ajustes" aria-label="Ajustes">
       <div className="set">
         <div className="card"><h2>Horario laboral</h2>
-          <div className="row"><div className="d"><b>Hora de entrada</b><span>Inicio de la jornada ordinaria</span></div><Field id="sStart" type="time" value={st.schedStart} onCommit={setTime('schedStart', 'Hora de entrada')} /></div>
+          <div className="row"><div className="d"><b>Hora de entrada</b><span>Desde esta hora y hasta la salida el tiempo no cuenta</span></div><Field id="sStart" type="time" value={st.schedStart} onCommit={setTime('schedStart', 'Hora de entrada')} /></div>
           <div className="row"><div className="d"><b>Hora de salida</b><span>Después de esta hora cuenta como extra</span></div><Field id="sEnd" type="time" value={st.schedEnd} onCommit={setTime('schedEnd', 'Hora de salida')} /></div>
-          <div className="row"><div className="d"><b>Almuerzo / pausa no remunerada</b><span>Minutos máximos dentro del horario (0 = sin almuerzo)</span></div>
-            <Field id="sLunch" type="number" min={0} max={240} step={5} value={String(st.lunch)} onCommit={v => {
-              const n = Math.round(+v); const span = tmin(st.schedEnd) - tmin(st.schedStart);
-              if (v !== '' && n >= 0 && n <= 240 && n < span) actions.saveSettings({ lunch: n }, 'Almuerzo: ' + n + ' min'); else toast('Valor de almuerzo no válido', 'bad');
-            }} /></div>
           <div className="row"><div className="d"><b>Días laborales</b><span>Sábados, domingos y festivos no marcados cuentan como extra</span></div>
             <div className="seg" id="sDays" role="group" aria-label="Días laborales">
               {[1, 2, 3, 4, 5, 6, 0].map(d => <button key={d} data-wd={d} aria-label={full[d]} aria-pressed={st.workdays.includes(d)} onClick={() => actions.saveSettings({ workdays: st.workdays.includes(d) ? st.workdays.filter(x => x !== d) : [...st.workdays, d] })}>{names[d]}</button>)}
@@ -63,7 +58,7 @@ export function SettingsView() {
             </div></div>
           <div className="row"><div className="d"><b>Fin de jornada nocturna</b><span>Desde esta hora el trabajo vuelve a ser diurno (ley: 06:00)</span></div><Field id="sNightEnd" type="time" value={st.nightEnd} onCommit={setTime('nightEnd', 'Fin jornada nocturna')} /></div>
           <div className="derived" id="sDerived">
-            Jornada ordinaria: <b>{hNum(g / H)} h por día</b> ({st.schedStart} – {st.schedEnd} menos {st.lunch} min de almuerzo) · Meta semanal base: <b>{hNum(eng.weeklyGoalMs() / H)} h</b> ({st.workdays.length} días). Las semanas con festivos ajustan su meta automáticamente.<br />
+            Solo horas extra: en días laborales el tiempo entre <b>{st.schedStart}</b> y <b>{st.schedEnd}</b> no se cuenta; las extras empiezan a las {st.schedEnd}. Sábados, domingos y festivos cuentan completos.<br />
             Jornada nocturna aplicada hoy: <b>{eng.nightStartFor(sod(now))} – {st.nightEnd}</b>{st.nightStart ? ' (personalizada)' : ' (según la ley)'}. Solo se cuentan horas; no se calculan pagos ni recargos.
           </div>
         </div>

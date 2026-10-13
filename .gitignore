@@ -31,3 +31,5 @@ playwright-report/
 coverage/
 *.csv
 !shared/*.csv
+
+backups/

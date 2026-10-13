@@ -42,7 +42,7 @@ public class ExportService {
         return v.matches("(?s).*[;\"\\n\\r].*") ? "\"" + v.replace("\"", "\"\"") + "\"" : v;
     }
 
-    /** CSV compatible con Excel en español (separador ';', coma decimal y BOM UTF-8). */
+    /** Solo horas extra (el tiempo dentro del horario laboral no cuenta). CSV compatible con Excel en español (separador ';', coma decimal y BOM UTF-8). */
     public String csv(LocalDate from, LocalDate to, String q) {
         HourClassifier c = summary.classifier();
         ZoneId z = summary.zone();
@@ -55,8 +55,8 @@ public class ExportService {
         rows.removeIf(s -> !query.isEmpty() && !s.note().toLowerCase(Locale.ROOT).contains(query) && !s.tag().toLowerCase(Locale.ROOT).contains(query));
         rows.sort(Comparator.comparingLong(SessionDto::start));
 
-        List<String> head = new ArrayList<>(List.of("Fecha inicio", "Hora inicio", "Fecha fin", "Hora fin", "Trabajado (hh:mm)", "Horas trabajadas", "Horas ordinarias", "Horas extra"));
-        for (Category k : Category.values()) head.add(k.label);
+        List<String> head = new ArrayList<>(List.of("Fecha inicio", "Hora inicio", "Fecha fin", "Hora fin", "Horas extra (hh:mm)", "Horas extra"));
+        for (Category k : Category.values()) if (k.extra) head.add(k.label);
         head.addAll(List.of("Inicio nocturna aplicado", "Tipo", "Festivo", "Pausas (min)", "Marcada como extra", "Proyecto", "Nota"));
         StringBuilder sb = new StringBuilder("\uFEFF").append(String.join(";", head));
         Breakdown tot = new Breakdown();
@@ -78,14 +78,14 @@ public class ExportService {
                 Holidays.nameOf(d).ifPresent(fest::add);
             }
             List<String> r = new ArrayList<>(List.of(zs.toLocalDate().toString(), zs.format(HHMM), ze.toLocalDate().toString(),
-                    s.end() == null ? "en curso" : ze.format(HHMM), hhmm(br.work()), dec(br.work()), dec(br.ordinary()), dec(br.extra())));
-            for (Category k : Category.values()) r.add(dec(br.get(k)));
+                    s.end() == null ? "en curso" : ze.format(HHMM), hhmm(br.extra()), dec(br.extra())));
+            for (Category k : Category.values()) if (k.extra) r.add(dec(br.get(k)));
             r.addAll(List.of(c.schedule().nightStartFor(zs.toLocalDate()).toString(), tipos.isEmpty() ? "—" : String.join(" + ", tipos),
                     String.join(" / ", fest), String.valueOf(Math.round(pause / (double) M)), s.extra() ? "Sí" : "No", s.tag(), s.note()));
             sb.append("\r\n").append(r.stream().map(ExportService::cell).collect(Collectors.joining(";")));
         }
-        List<String> t = new ArrayList<>(List.of("TOTAL", "", "", "", hhmm(tot.work()), dec(tot.work()), dec(tot.ordinary()), dec(tot.extra())));
-        for (Category k : Category.values()) t.add(dec(tot.get(k)));
+        List<String> t = new ArrayList<>(List.of("TOTAL", "", "", "", hhmm(tot.extra()), dec(tot.extra())));
+        for (Category k : Category.values()) if (k.extra) t.add(dec(tot.get(k)));
         t.addAll(List.of("", "", "", String.valueOf(Math.round(totPause / (double) M)), "", "", ""));
         sb.append("\r\n").append(String.join(";", t));
         return sb.toString();

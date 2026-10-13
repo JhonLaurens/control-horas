@@ -1,7 +1,7 @@
 import { useStore } from '../lib/store';
-import { extraHint, type DayBreak, type Engine } from '../lib/engine';
+import { type DayBreak, type Engine } from '../lib/engine';
 import { holidays } from '../lib/holidays';
-import { H, M, addDays, cap, dur, fmtDM, fmtLong, fmtMY, fmtWD, fmtWDM, hNum, parseLocal, sod, som, sow, ymd } from '../lib/time';
+import { H, M, addDays, cap, dur, fmtDM, fmtLong, fmtMY, fmtWD, fmtWDM, parseLocal, sod, som, sow, ymd } from '../lib/time';
 import { Icon } from '../components/icons';
 import { BarChart, type ChartDay } from '../components/BarChart';
 import { Big, ExtBreak, Kpis, TagBreak } from '../components/common';
@@ -25,9 +25,8 @@ function Nav({ label, onShift, reset }: { label: string; onShift: (n: number) =>
 
 const legend = (fest?: boolean) => (
   <span className="legend">
-    <span><i style={{ background: 'linear-gradient(var(--acc2),var(--acc))' }} />Trabajado</span>
-    <span><i style={{ background: 'var(--warn)' }} />Extra</span>
-    {fest ? <span><i style={{ background: 'color-mix(in srgb,var(--warn) 25%,transparent)' }} />Festivo</span> : <span><i style={{ background: 'transparent', border: '1.5px dashed var(--fg2)' }} />Meta del día</span>}
+    <span><i style={{ background: 'var(--warn)' }} />Horas extra</span>
+    {fest && <span><i style={{ background: 'color-mix(in srgb,var(--warn) 25%,transparent)' }} />Festivo</span>}
   </span>
 );
 
@@ -40,10 +39,10 @@ export function WeekView() {
     <section className="view on" id="v-semana" aria-label="Semana">
       <Nav label={`${fmtDM.format(w0)} – ${fmtDM.format(addDays(w0, 6))} ${new Date(addDays(w0, 6)).getFullYear()}`} reset="Esta semana" onShift={n => setWeekOff(n ? weekOff + n : 0)} />
       <Kpis id="wKpis" items={[
-        { l: 'Total semana', v: <Big ms={T.work} />, h: `${withRec} día${withRec === 1 ? '' : 's'} con registro · promedio ${dur(withRec ? T.work / withRec : 0, 1)}`, c: 'var(--acc)' },
-        { l: 'Ordinarias vs. meta', v: <Big ms={T.ord} suffix={<small>/ {hNum(T.goal / H)} h</small>} />, bar: T.goal ? T.ord / T.goal * 100 : 0, h: nf ? `Meta reducida por ${nf} festivo${nf > 1 ? 's' : ''}` : `${T.goal ? Math.round(T.ord / T.goal * 100) : 0}% de la meta semanal`, c: '#06b6d4' },
-        { l: 'Horas extra', v: <Big ms={T.extra} />, h: extraHint(T), c: 'var(--warn)' },
-        { l: 'Pendiente de la meta', v: <Big ms={Math.max(0, T.goal - T.ord)} />, h: T.ord >= T.goal ? 'Meta semanal cumplida' : `${hNum(eng.dailyGoalMs() / H)} h por día laboral`, c: 'var(--ok)' },
+        { l: 'Horas extra semana', v: <Big ms={T.extra} suffix={<small>/ 12 h</small>} />, bar: T.extra / (12 * H) * 100, h: `Límite legal 12 h/semana · ${withRec} día${withRec === 1 ? '' : 's'} con extras`, c: 'var(--warn)' },
+        { l: 'Extra diurna / nocturna', v: <><Big ms={T.eD} /> <small>/</small> <Big ms={T.eN} /></>, h: 'Días hábiles fuera del horario', c: 'var(--acc)' },
+        { l: 'Dominical / festivo', v: <Big ms={T.df} />, h: `Diurna ${dur(T.fD, 1)} · nocturna ${dur(T.fN, 1)}${nf ? ` · ${nf} festivo${nf > 1 ? 's' : ''}` : ''}`, c: '#06b6d4' },
+        { l: 'Sábado / descanso', v: <Big ms={T.sab} />, h: `Diurna ${dur(T.sD, 1)} · nocturna ${dur(T.sN, 1)}`, c: 'var(--ok)' },
       ]} />
       <div className="grid" style={{ gridTemplateColumns: '2fr 1fr', marginTop: 18, alignItems: 'start' }} id="wGrid">
         <div className="card"><h2>Horas por día<span className="sp" />{legend()}</h2><BarChart id="wChart" days={days} animKey={'w' + w0} /></div>
@@ -82,17 +81,16 @@ export function MonthView() {
   const { eng, now: t, monthOff, setMonthOff } = useStore();
   const d = new Date(som(t)); d.setMonth(d.getMonth() + monthOff); const m0 = d.getTime(); const m1 = new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime();
   const T = eng.rangeBreak(m0, m1); const days = T.days.map(b => { const dt = new Date(b.d0).getDate(); return chartDay(b, t, dt % 2 === 1 ? String(dt) : '', ''); });
-  const today = sod(t); let expected = 0, ordToDate = 0; for (const b of T.days) if (b.d0 <= today) { expected += b.goal; ordToDate += b.ord; }
-  const wdays = T.days.filter(b => b.info.working).length, nf = T.days.filter(b => b.info.fest).length, bal = ordToDate - expected, withRec = T.days.filter(b => b.work > 0).length;
+  const today = sod(t); const nf = T.days.filter(b => b.info.fest).length, withRec = T.days.filter(b => b.work > 0).length;
   const mk = ymd(m0).slice(0, 7); const fl = holidays(new Date(m0).getFullYear()).list.filter(h => h.date.startsWith(mk));
   return (
     <section className="view on" id="v-mes" aria-label="Mes">
       <Nav label={cap(fmtMY.format(m0))} reset="Este mes" onShift={n => setMonthOff(n ? monthOff + n : 0)} />
       <Kpis id="mKpis" items={[
-        { l: 'Total mes', v: <Big ms={T.work} />, h: `${withRec} días con registro · promedio ${dur(withRec ? T.work / withRec : 0, 1)}`, c: 'var(--acc)' },
-        { l: 'Ordinarias vs. meta', v: <Big ms={T.ord} suffix={<small>/ {hNum(T.goal / H)} h</small>} />, bar: T.goal ? T.ord / T.goal * 100 : 0, h: `${wdays} días laborales${nf ? ` · ${nf} festivo${nf > 1 ? 's' : ''}` : ''}`, c: '#06b6d4' },
-        { l: 'Balance a la fecha', v: <>{bal >= 0 ? '+' : '−'}<Big ms={Math.abs(bal)} /></>, h: `Ordinarias esperadas: ${dur(expected, 1)}`, c: bal >= 0 ? 'var(--ok)' : 'var(--bad)' },
-        { l: 'Horas extra', v: <Big ms={T.extra} />, h: extraHint(T), c: 'var(--warn)' },
+        { l: 'Horas extra mes', v: <Big ms={T.extra} />, h: `${withRec} días con extras · promedio ${dur(withRec ? T.extra / withRec : 0, 1)}`, c: 'var(--warn)' },
+        { l: 'Extra diurna / nocturna', v: <><Big ms={T.eD} /> <small>/</small> <Big ms={T.eN} /></>, h: 'Días hábiles fuera del horario', c: 'var(--acc)' },
+        { l: 'Dominical / festivo', v: <Big ms={T.df} />, h: `Diurna ${dur(T.fD, 1)} · nocturna ${dur(T.fN, 1)}${nf ? ` · ${nf} festivo${nf > 1 ? 's' : ''}` : ''}`, c: '#06b6d4' },
+        { l: 'Sábado / descanso', v: <Big ms={T.sab} />, h: `Diurna ${dur(T.sD, 1)} · nocturna ${dur(T.sN, 1)}`, c: 'var(--ok)' },
       ]} />
       <div className="card" style={{ marginTop: 18 }}><h2>Horas por día<span className="sp" />{legend(true)}</h2><BarChart id="mChart" days={days} animKey={'m' + m0} /></div>
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 18 }} id="mGrid">

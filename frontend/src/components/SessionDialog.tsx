@@ -34,7 +34,7 @@ export function SessionDialog() {
   if (!v) {
     const info = eng.dayInfo(sod(a)); const ws = atMin(sod(a), tmin(state.settings.schedStart)), we = atMin(sod(a), tmin(state.settings.schedEnd));
     cls = f.extra ? 'Toda la sesión como extra' : !info.working ? (info.fest ? 'Festivo (' + info.fest + '): todo es extra' : 'Día no laboral: todo es extra')
-      : (a >= ws && b <= we && ymd(a) === ymd(b)) ? 'Dentro del horario (ordinaria hasta completar la jornada)' : 'Incluye tiempo fuera del horario (extra)';
+      : (a >= ws && b <= we && ymd(a) === ymd(b)) ? 'Dentro del horario laboral: no cuenta (solo horas extra)' : 'Lo que está fuera del horario cuenta como extra';
   }
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const val = k === 'extra' ? (e.target as HTMLInputElement).checked : e.target.value; setErr('');

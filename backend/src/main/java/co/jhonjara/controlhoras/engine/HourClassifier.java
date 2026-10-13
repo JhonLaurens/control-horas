@@ -10,7 +10,8 @@ import java.util.*;
  * <ul>
  *   <li>Cada sesión se divide primero por día calendario (un festivo/domingo solo afecta su propio día).</li>
  *   <li>Días no laborales (festivo, domingo, sábado o día no marcado): todo es extra dominical/festivo o sábado/descanso.</li>
- *   <li>Días laborales: dentro del horario es ordinaria hasta completar la jornada (horario − almuerzo); el resto es extra.</li>
+ *   <li>Días laborales: la app es solo para horas extra; el tiempo dentro del horario no se cuenta (ni trabajo ni categoría)
+ *       salvo que la sesión esté marcada manualmente como extra. Fuera del horario es extra.</li>
  *   <li>Diurna/nocturna según la ventana nocturna del día (inicio legal por fecha o personalizado, fin 06:00 por defecto).</li>
  * </ul>
  */
@@ -104,7 +105,7 @@ public final class HourClassifier {
     private DayResult computeDay(LocalDate d) {
         long d0 = dayStart(d), d1 = dayStart(d.plusDays(1));
         DayInfo info = dayInfo(d);
-        long goal = info.working() ? schedule.dailyGoalMs() : 0;
+        long goal = 0; // solo horas extra: no hay jornada ordinaria que cumplir
         long w0 = at(d, schedule.schedStart()), w1 = at(d, schedule.schedEnd());
         long[][] night = {{d0, at(d, schedule.nightEnd())}, {at(d, schedule.nightStartFor(d)), d1}};
 
@@ -122,32 +123,27 @@ public final class HourClassifier {
             }
         }
         pieces.sort(Comparator.comparingLong(Piece::a));
-        long used = 0;
         for (Piece p : pieces) {
             Breakdown B = per.get(p.s().id());
-            B.addWork(p.b() - p.a());
             if (!info.working()) {
+                B.addWork(p.b() - p.a());
                 boolean df = info.kind().equals("fest") || info.kind().equals("dom");
                 split(B, df ? Category.fD : Category.sD, df ? Category.fN : Category.sN, p.a(), p.b(), night);
                 continue;
             }
             if (p.s().extra()) {
+                B.addWork(p.b() - p.a());
                 split(B, Category.eD, Category.eN, p.a(), p.b(), night);
                 continue;
             }
-            long a0 = Math.max(p.a(), w0), a1 = Math.min(p.b(), w1);
-            if (a1 > a0) {
-                long take = Math.min(a1 - a0, Math.max(0, goal - used));
-                used += take;
-                split(B, Category.oD, Category.oN, a0, a0 + take, night);
-                split(B, Category.eD, Category.eN, a0 + take, a1, night);
-            }
+            long excluded = overlap(p.a(), p.b(), w0, w1);
+            B.addWork(p.b() - p.a() - excluded);
             split(B, Category.eD, Category.eN, p.a(), Math.min(p.b(), w0), night);
             split(B, Category.eD, Category.eN, Math.max(p.a(), w1), p.b(), night);
         }
         Breakdown total = new Breakdown();
         per.values().forEach(total::addAll);
-        long lunchOver = info.working() ? Math.max(0, pause - schedule.lunchMs()) : 0;
+        long lunchOver = 0; // sin lógica de almuerzo: no se registra la jornada ordinaria
         return new DayResult(info, goal, total, pause, lunchOver, per);
     }
 

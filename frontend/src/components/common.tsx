@@ -1,5 +1,5 @@
-import { ALL_CATS, CATS, ORD_CATS, typeList, type Totals } from '../lib/engine';
-import { H, M, dur, hDec, p2 } from '../lib/time';
+import { ALL_CATS, CATS, typeList, type Totals } from '../lib/engine';
+import { H, M, addDays, dur, hDec, p2, sod } from '../lib/time';
 import type { Engine } from '../lib/engine';
 import type { ReactNode } from 'react';
 
@@ -41,8 +41,6 @@ export function ExtBreak({ T, id }: { T: Totals; id?: string }) {
   );
   return (
     <div className="tags" id={id}>
-      {ORD_CATS.map(c => row(c, false))}
-      <div className="tagrow"><div className="tt" style={{ fontWeight: 650 }}><span>Total ordinarias</span><span>{dur(T.ord, 1)}</span></div></div>
       {CATS.map(c => row(c, true))}
       <div className="tagrow"><div className="tt" style={{ fontWeight: 650 }}><span>Total horas extra</span><span style={{ color: 'var(--warn)' }}>{dur(T.extra, 1)} · {hDec(T.extra)} h</span></div></div>
     </div>
@@ -51,7 +49,7 @@ export function ExtBreak({ T, id }: { T: Totals; id?: string }) {
 
 export function TagBreak({ eng, from, to, id }: { eng: Engine; from: number; to: number; id?: string }) {
   const m = new Map<string, number>(); let tot = 0;
-  for (const s of eng.sessionsIn(from, to)) { const w = eng.workIn(s, from, to); const k = s.tag || 'Sin proyecto'; m.set(k, (m.get(k) || 0) + w); tot += w; }
+  for (const s of eng.sessionsIn(from, to)) { let w = 0; for (let d = sod(Math.max(s.start, from)); d < Math.min(eng.sEnd(s), to); d = addDays(d, 1)) w += eng.dayBreak(d).per[s.id]?.work || 0; const k = s.tag || 'Sin proyecto'; m.set(k, (m.get(k) || 0) + w); tot += w; }
   const arr = [...m].sort((a, b) => b[1] - a[1]);
   return (
     <div className="tags" id={id}>
